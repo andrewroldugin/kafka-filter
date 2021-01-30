@@ -9,6 +9,8 @@
             [ring.util.response :refer [response bad-request not-found created]])
   (:gen-class))
 
+(def filters (atom []))
+
 (defn parse-int [number-string]
   (try (Integer/parseInt number-string)
        (catch Exception e nil)))
@@ -16,22 +18,26 @@
 (defn get-filter [req]
   (let [params (:params req)]
     (cond
-      (empty? params) (response {:msg "TODO: All filters"})
+      (empty? params) (response (remove nil? @filters))
       (:id params) (if-let [id (parse-int (:id params))]
                      (response {:msg (str "TODO: Print filter " id " content")})
                      (bad-request {:msg "Filter id must be integer"}))
       :else (bad-request {:msg (str "Unsupported query: " (:query-string req))}))))
 
 (defn add-filter [req]
-  (pp/pprint req)
-  (response {:id 2464}))
+  (let [body (:body req)]
+    (if (and (map? body) (string? (:topic body)) (string? (:q body)))
+      (created (:uri req) (last (swap! filters conj (assoc body :id (count @filters)))))
+      (bad-request {:msg "Unexpected body"}))))
 
 (defn remove-filter [req]
-  (pp/pprint req)
   (let [body (:body req)]
-    (cond
-      (map? body) (response {:id "new-id" })
-      :else (bad-request {:msg "Unexpected param"}))))
+    (if-let [id (and (map? body) (integer? (:id body)) (:id body))]
+      (if-let [removed (get @filters id)]
+        (do (swap! filters assoc id nil)
+            (response removed))
+        (bad-request {:msg (str "Filter with id = " id " not found")}))
+      (bad-request {:msg "Unexpected body"}))))
 
 (defroutes app-routes
   (GET "/filter" [] get-filter)
