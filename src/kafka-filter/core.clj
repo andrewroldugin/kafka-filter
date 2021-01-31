@@ -76,6 +76,12 @@
   (try (Integer/parseInt number-string)
        (catch Exception e nil)))
 
+(defn wrap-filter-response [x]
+  "Select necessary keys from filter data for response."
+  (select-keys x [:id :topic :q]))
+
+;; (wrap-filter-response {:topic "books" :q "sicp" :id 4 :offset 6})
+
 (defn get-filter [req]
   "Return all filters if params are empty.
 Otherwise print filtered kafka messages for specified filter id."
@@ -83,7 +89,7 @@ Otherwise print filtered kafka messages for specified filter id."
     (cond
       (empty? params) (response (->> @filters
                                      (remove nil?)
-                                     (map #(select-keys % [:id :topic :q]))))
+                                     (map (partial wrap-filter-response))))
       (:id params) (if-let [id (parse-int (:id params))]
                      (if-let [f (get @filters id)]
                        (response (filter
@@ -95,28 +101,27 @@ Otherwise print filtered kafka messages for specified filter id."
       :else (bad-request {:msg (str "Unsupported query: " (:query-string req))}))))
 
 (defn add-filter [req]
-  "Add filter from request."
+  "Add filter."
   (let [body (:body req)]
     (if (and (map? body) (string? (:topic body)) (string? (:q body)))
       (if-let [topic (topics (:topic body))]
         (created (:uri req)
-                 (select-keys
+                 (wrap-filter-response
                   (last (swap! filters
                                conj (assoc body
                                            :id (count @filters)
-                                           :offset (messages-count topic))))
-                  [:id :topic :q]))
+                                           :offset (messages-count topic))))))
         (bad-request {:available-topics (keys topics)
                       :msg (str "Unknown topic '" (:topic body) "'. See available topics.")}))
       (bad-request {:msg "Unexpected body"}))))
 
 (defn remove-filter [req]
-  "Remove filter from request."
+  "Remove filter."
   (let [body (:body req)]
     (if-let [id (and (map? body) (integer? (:id body)) (:id body))]
       (if-let [removed (get @filters id)]
         (do (swap! filters assoc id nil)
-            (response (select-keys removed [:id :topic :q])))
+            (response (wrap-filter-response removed)))
         (bad-request {:msg (str "Filter with id = " id " not found")}))
       (bad-request {:msg "Unexpected body"}))))
 
