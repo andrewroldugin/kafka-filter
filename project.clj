@@ -7,7 +7,8 @@
                  [compojure "1.6.2"]
                  [http-kit "2.5.1"]
                  [ring/ring-defaults "0.3.2"]
-                 [ring/ring-json "0.5.0"]]
+                 [ring/ring-json "0.5.0"]
+                 [fundingcircle/jackdaw "0.6.4"]]
   :main ^:skip-aot kafka-filter.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
