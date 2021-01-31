@@ -56,7 +56,9 @@
 
 (defn filter-message [filter-string msg]
   "Case insensitive filter for string representation of message."
-  (re-find (re-pattern (str "(?i)" filter-string)) (pr-str msg)))
+  (let [pattern (re-pattern (str "(?i)" filter-string))
+        search-string (pr-str msg)]
+    (re-find pattern search-string)))
 
 ;; (filter-message "sicp" {:id 42644 :name "SiCP book"})
 ;; (filter-message "some" {:id 42464 :name "SiCP book"})
@@ -87,7 +89,7 @@ Otherwise print filtered kafka messages for specified filter id."
     (cond
       (empty? params) (response (->> @filters
                                      (remove nil?)
-                                     (map (partial wrap-filter-response))))
+                                     (map wrap-filter-response)))
       (:id params) (if-let [id (parse-int (:id params))]
                      (if-let [f (get @filters id)]
                        (response (filter
@@ -106,7 +108,7 @@ Otherwise print filtered kafka messages for specified filter id."
         (created (:uri req)
                  (wrap-filter-response
                   (last (swap! filters
-                               conj (assoc body
+                               conj (assoc (select-keys body [:topic :q])
                                            :id (count @filters)
                                            :offset (messages-count topic))))))
         (bad-request {:available-topics (keys topics)
@@ -162,7 +164,7 @@ Otherwise print filtered kafka messages for specified filter id."
   ;; View filtered messages
   (filter (partial filter-message "sicp") [{:id 94637 :name "Harry Potter"}
                                            {:id 42464 :name "SiCP book"}
-                                           {:id 42644 :name "SiCP book"}])
+                                           {:id 42644 :name "sicp book"}])
 
   ;; View filtered messages from books topic
   (filter (partial filter-message "sicp") (view-messages books-topic 0))
