@@ -3,8 +3,6 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.middleware.defaults :refer :all]
-            [clojure.pprint :as pp]
-            [clojure.string :as str]
             [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
             [ring.util.response :refer [response bad-request not-found created]]
             [jackdaw.client :as jc]
