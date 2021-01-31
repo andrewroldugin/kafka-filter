@@ -57,7 +57,7 @@
          doall)))
 
 (defn filter-message [filter-string msg]
-  "Case insensitive filter for message string representation."
+  "Case insensitive filter for string representation of message."
   (re-find (re-pattern (str "(?i)" filter-string)) (pr-str msg)))
 
 ;; (filter-message "sicp" {:id 42644 :name "SiCP book"})
